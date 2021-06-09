@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hls</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  </head>
+  <body>
+    <video id="video" controls></video>
+
+    <script>
+      function process(playlist) {
+        //    remove pixel png
+        return new ArrayBuffer(playlist).slice(116);
+      }
+
+      class pLoader extends Hls.DefaultConfig.loader {
+        constructor(config) {
+          super(config);
+          var load = this.load.bind(this);
+          this.load = function (context, config, callbacks) {
+            var onSuccess = callbacks.onSuccess;
+            callbacks.onSuccess = function (response, stats, context) {
+              response.data = process(response.data);
+              onSuccess(response, stats, context);
+            };
+            load(context, config, callbacks);
+          };
+        }
+      }
+      var video = document.getElementById("video");
+      var videoSrcHls = "./index.m3u8";
+
+      if (Hls.isSupported()) {
+        var hls = new Hls({
+          fLoader: pLoader,
+        });
+        hls.loadSource(videoSrcHls);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play();
+        });
+      }
+    </script>
+  </body>
+</html>
